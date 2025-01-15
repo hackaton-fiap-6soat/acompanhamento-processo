@@ -24,11 +24,6 @@ jobs:
           zip -r ../lambda-sqs.zip .
           cd ..
 
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-
       - name: Salvar pacotes ZIP como artefatos
         uses: actions/upload-artifact@v3
         with:

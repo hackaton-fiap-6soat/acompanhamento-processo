@@ -21,14 +21,14 @@ resource "aws_s3_bucket" "lambda_code_acompanhamento" {
 resource "aws_s3_object" "lambda_api_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
-  source = "lambda-api.zip" # Caminho local do arquivo zip para a Lambda API
+  source = "lambda-api.zip"
 }
 
 # Criar o objeto no S3 para o código da Lambda SQS
 resource "aws_s3_object" "lambda_sqs_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-sqs.zip"
-  source = "lambda-sqs.zip" # Caminho local do arquivo zip para a Lambda SQS
+  source = "lambda-sqs.zip"
 }
 
 # Função Lambda - AcompanhamentoAPI
