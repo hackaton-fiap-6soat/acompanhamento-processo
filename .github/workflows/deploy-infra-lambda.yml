@@ -10,7 +10,7 @@ jobs:
   setup_and_build:
     runs-on: ubuntu-latest
     outputs:
-      env_file_path: "app/.env"
+      bucket_name: ${{ steps.get_bucket.outputs.bucket_name }}
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -50,6 +50,8 @@ jobs:
   terraform_apply:
     needs: setup_and_build
     runs-on: ubuntu-latest
+    outputs:
+      bucket_name: ${{ steps.get_bucket.outputs.bucket_name }}
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -107,6 +109,12 @@ jobs:
         with:
           name: lambda-api.zip
           path: .
+
+      - name: Baixar arquivo .env
+        uses: actions/download-artifact@v3
+        with:
+          name: env-file
+          path: app/
 
       - name: Configurar ambiente com .env
         run: |
