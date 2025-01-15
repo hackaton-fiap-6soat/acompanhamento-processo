@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
+        with:
+          clean: false  # Evita a limpeza do diretório
 
       - name: Instalar dependências e criar pacote ZIP
         run: |
