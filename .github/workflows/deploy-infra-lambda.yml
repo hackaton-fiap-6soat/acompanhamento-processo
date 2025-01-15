@@ -71,7 +71,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: lambda-api.zip
-          path: .
+          path: lambda-api.zip
 
       - name: Criar bucket S3 e enviar arquivo ZIP
         run: |
