@@ -1,5 +1,4 @@
 provider "aws" {
-  profile = "aws_academy"
   region  = "us-east-1"
 }
 
