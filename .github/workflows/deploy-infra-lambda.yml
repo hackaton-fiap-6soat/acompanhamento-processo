@@ -20,11 +20,11 @@ jobs:
 
       - name: Criar arquivo .env
         run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> app/.env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" > app/.env
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> app/.env
           echo "AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}" >> app/.env
 
-      - name: Exibir conteúdo do arquivo .env (para depuração)
+      - name: Exibir conteúdo do arquivo .env
         run: cat app/.env
 
       - name: Instalar dependências e criar pacote ZIP
@@ -56,20 +56,23 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Baixar arquivo .env
+      - name: Baixar artefato .env
         uses: actions/download-artifact@v3
         with:
           name: env-file
           path: app/
 
-      - name: Configurar ambiente com .env
+      - name: Verificar arquivo .env
         run: |
           if [ -f app/.env ]; then
-            source app/.env
+            cat app/.env
           else
             echo "Arquivo .env não encontrado!"
             exit 1
           fi
+
+      - name: Configurar ambiente com .env
+        run: source app/.env
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
@@ -79,7 +82,7 @@ jobs:
       - name: Inicializar o Terraform
         run: |
           terraform init -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
-                         -backend-config="key=terraform/state/hackaton.tfstate" \
+                         -backend-config="key=terraform/state/terraform.tfstate" \
                          -backend-config="region=us-east-1" \
                          -backend-config="encrypt=true"
 
@@ -116,14 +119,17 @@ jobs:
           name: env-file
           path: app/
 
-      - name: Configurar ambiente com .env
+      - name: Verificar arquivo .env
         run: |
           if [ -f app/.env ]; then
-            source app/.env
+            cat app/.env
           else
             echo "Arquivo .env não encontrado!"
             exit 1
           fi
+
+      - name: Configurar ambiente com .env
+        run: source app/.env
 
       - name: Upload do arquivo ZIP para o S3
         run: |
