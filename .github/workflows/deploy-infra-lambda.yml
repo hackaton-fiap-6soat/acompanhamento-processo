@@ -46,7 +46,7 @@ jobs:
 
       - name: Criar bucket S3 e enviar arquivo ZIP
         run: |
-          BUCKET_NAME="lambda-code-acompanhamento-${{ github.run_id }}"
+          BUCKET_NAME="lambda-code-acompanhamento"
           echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
           aws s3api create-bucket --bucket $BUCKET_NAME --region us-east-1
           aws s3 cp lambda-api.zip s3://$BUCKET_NAME/lambda-api.zip
