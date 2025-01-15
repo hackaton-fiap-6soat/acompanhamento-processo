@@ -2,9 +2,15 @@ provider "aws" {
   region = "us-east-1"
 }
 
+variable "s3_bucket_name" {
+  description = "Nome do bucket S3 para armazenar o código Lambda"
+  type        = string
+  default     = "lambda-code-acompanhamento"
+}
+
 # Criar o bucket S3 com nome fixo
 resource "aws_s3_bucket" "lambda_code_acompanhamento" {
-  bucket = "lambda-code-acompanhamento"
+  bucket = var.s3_bucket_name
 
   lifecycle {
     prevent_destroy = false
