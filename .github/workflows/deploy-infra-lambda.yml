@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  # Job 1: Configuração do ambiente e construção do pacote
+  # Job 1: Configuração do ambiente e construção dos pacotes
   setup_and_build:
     runs-on: ubuntu-latest
     steps:
@@ -15,49 +15,42 @@ jobs:
         with:
           clean: false  # Evita a limpeza do diretório
 
-      - name: Instalar dependências e criar pacote ZIP
+      - name: Instalar dependências e criar pacotes ZIP
         run: |
-          # Instalar dependências no diretório build/
-          pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
-          
-          # Validar se a instalação foi bem-sucedida
-          if [ ! -d "build" ] || [ -z "$(ls -A build)" ]; then
-            echo "A instalação das dependências falhou ou o diretório build está vazio."
-            exit 1
-          fi
-  
-          # Copiar código para o diretório build/
-          cp -r app/* build/
-          
-          # Garantir que os arquivos foram copiados
-          if [ ! -d "build" ] || [ -z "$(ls -A build)" ]; then
-            echo "A pasta 'app/' está vazia ou não foi copiada corretamente para 'build/'."
-            exit 1
-          fi
-  
-          # Criar o pacote ZIP
-          cd build
-          zip -r ../lambda-api.zip . || { echo "Falha ao criar o arquivo ZIP."; exit 1; }
+          # Criar diretório para Lambda API
+          mkdir -p build_api
+          pip install -r requirements-api.txt --platform manylinux2014_x86_64 --target build_api/ --only-binary=:all:
+          cp -r app/api/* build_api/
+          cd build_api
+          zip -r ../lambda-api.zip .
           cd ..
-          
-          # Confirmar se o ZIP foi criado
-          if [ ! -f "lambda-api.zip" ]; then
-            echo "Arquivo ZIP 'lambda-api.zip' não foi criado na raiz."
-            exit 1
-          fi
+
+          # Criar diretório para Lambda SQS
+          mkdir -p build_sqs
+          pip install -r requirements-sqs.txt --platform manylinux2014_x86_64 --target build_sqs/ --only-binary=:all:
+          cp -r app/sqs/* build_sqs/
+          cd build_sqs
+          zip -r ../lambda-sqs.zip .
+          cd ..
+
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
-      - name: Salvar pacote ZIP como artefato
+      - name: Salvar pacotes ZIP como artefatos
         uses: actions/upload-artifact@v3
         with:
           name: lambda-api.zip
           path: lambda-api.zip
 
+      - name: Salvar pacote SQS ZIP como artefato
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-sqs.zip
+          path: lambda-sqs.zip
 
-  # Job 2: Criar o bucket S3 e enviar o arquivo ZIP
+  # Job 2: Criar o bucket S3 e enviar os arquivos ZIP
   upload_to_s3:
     needs: setup_and_build
     runs-on: ubuntu-latest
@@ -67,18 +60,25 @@ jobs:
         with:
           clean: false  # Evita a limpeza do diretório
 
-      - name: Baixar pacote ZIP
+      - name: Baixar pacotes ZIP
         uses: actions/download-artifact@v3
         with:
           name: lambda-api.zip
           path: .
 
-      - name: Criar bucket S3 e enviar arquivo ZIP
+      - name: Baixar pacote SQS ZIP
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-sqs.zip
+          path: .
+
+      - name: Criar bucket S3 e enviar arquivos ZIP
         run: |
           BUCKET_NAME="lambda-code-acompanhamento"
           echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
           aws s3api create-bucket --bucket $BUCKET_NAME --region us-east-1
           aws s3 cp lambda-api.zip s3://$BUCKET_NAME/lambda-api.zip
+          aws s3 cp lambda-sqs.zip s3://$BUCKET_NAME/lambda-sqs.zip
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -105,7 +105,7 @@ jobs:
           terraform init -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
                          -backend-config="key=terraform/state/hackaton.tfstate" \
                          -backend-config="region=us-east-1" \
-                         -backend-config="encrypt=true"
+                         -backend-config="encrypt=false"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

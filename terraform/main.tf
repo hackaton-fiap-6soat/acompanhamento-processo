@@ -17,11 +17,18 @@ resource "aws_s3_bucket" "lambda_code_acompanhamento" {
   }
 }
 
-# Criar o objeto no S3 para o código da Lambda
+# Criar o objeto no S3 para o código da Lambda API
 resource "aws_s3_object" "lambda_api_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
-  source = "lambda-api.zip"
+  source = "lambda-api.zip" # Caminho local do arquivo zip para a Lambda API
+}
+
+# Criar o objeto no S3 para o código da Lambda SQS
+resource "aws_s3_object" "lambda_sqs_code" {
+  bucket = aws_s3_bucket.lambda_code_acompanhamento.id
+  key    = "lambda-sqs.zip"
+  source = "lambda-sqs.zip" # Caminho local do arquivo zip para a Lambda SQS
 }
 
 # Função Lambda - AcompanhamentoAPI
@@ -37,11 +44,11 @@ resource "aws_lambda_function" "api_lambda" {
   architectures    = ["x86_64"]
 }
 
-# Função Lambda - AcompanhamentoSQS (Usando o mesmo arquivo zip)
+# Função Lambda - AcompanhamentoSQS
 resource "aws_lambda_function" "sqs_lambda" {
   function_name    = "AcompanhamentoSQS"
   s3_bucket        = aws_s3_bucket.lambda_code_acompanhamento.id
-  s3_key           = aws_s3_object.lambda_api_code.key  # Usando o mesmo arquivo zip
+  s3_key           = aws_s3_object.lambda_sqs_code.key
   handler          = "app.sqs_handler.handler"
   runtime          = "python3.10"
   role             = "arn:aws:iam::765147163480:role/LabRole"
