@@ -22,20 +22,9 @@ jobs:
             exit 1
           fi
           pip install -r requirements.txt --platform manylinux2014_x86_64 --target build_api/ --only-binary=:all:
-          cp -r app/api/* build_api/
-          cd build_api
+          cp -r app/* build/
+          cd build
           zip -r ../lambda-api.zip .
-          cd ..
-
-          # Criar diretório para Lambda SQS
-          mkdir -p build_sqs
-          if [ ! -f "requirements.txt" ]; then
-            echo "Arquivo requirements.txt não encontrado."
-            exit 1
-          fi
-          pip install -r requirements.txt --platform manylinux2014_x86_64 --target build_sqs/ --only-binary=:all:
-          cp -r app/sqs/* build_sqs/
-          cd build_sqs
           zip -r ../lambda-sqs.zip .
           cd ..
 
