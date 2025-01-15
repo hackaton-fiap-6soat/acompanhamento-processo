@@ -30,16 +30,38 @@ jobs:
           name: lambda-api.zip
           path: lambda-api.zip
 
-  # Job 2: Aplicação do Terraform
-  terraform_apply:
+  # Job 2: Criar o bucket S3 e enviar o arquivo ZIP
+  upload_to_s3:
     needs: setup_and_build
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Navegar para o diretório Terraform
-        run: cd terraform
+      - name: Baixar pacote ZIP
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-api.zip
+          path: .
+
+      - name: Criar bucket S3 e enviar arquivo ZIP
+        run: |
+          BUCKET_NAME="lambda-code-acompanhamento-${{ github.run_id }}"
+          echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
+          aws s3api create-bucket --bucket $BUCKET_NAME --region us-east-1
+          aws s3 cp lambda-api.zip s3://$BUCKET_NAME/lambda-api.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
+  # Job 3: Aplicação do Terraform
+  terraform_apply:
+    needs: upload_to_s3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
@@ -61,35 +83,7 @@ jobs:
       - name: Aplicar configuração Terraform
         run: |
           cd terraform
-          terraform apply -auto-approve
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-
-      - name: Obter nome do bucket
-        id: get_bucket
-        run: |
-          cd terraform
-          echo "BUCKET_NAME=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
-
-  # Job 3: Upload do arquivo ZIP para o S3
-  upload_lambda_zip:
-    needs: terraform_apply
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Baixar pacote ZIP
-        uses: actions/download-artifact@v3
-        with:
-          name: lambda-api.zip
-          path: .
-
-      - name: Upload do arquivo ZIP para o S3
-        run: |
-          aws s3 cp lambda-api.zip s3://$BUCKET_NAME/lambda-api.zip
+          terraform apply -auto-approve -var "s3_bucket_name=$BUCKET_NAME"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
