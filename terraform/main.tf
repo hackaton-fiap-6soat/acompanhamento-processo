@@ -34,15 +34,11 @@ resource "aws_s3_bucket" "lambda_code_acompanhamento" {
 resource "aws_s3_object" "lambda_api_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
-#  source = "../lambda-api.zip"
-  #etag   = filemd5("../lambda-api.zip")
 }
 
 resource "aws_s3_object" "lambda_sqs_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
-#  source = "../lambda-api.zip"
-  #etag   = filemd5("../lambda-api.zip")
 }
 
 resource "aws_lambda_function" "api_lambda" {
@@ -55,8 +51,8 @@ resource "aws_lambda_function" "api_lambda" {
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
-  #source_code_hash = filebase64sha256("../lambda-api.zip")
 }
+
 
 resource "aws_lambda_function" "sqs_lambda" {
   function_name    = "AcompanhamentoSQS"

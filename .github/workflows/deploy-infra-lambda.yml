@@ -17,7 +17,7 @@ jobs:
         run: |
           pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
           cp -r app/* build/
-          cd build && zip -r ../lambda-api.zip .
+          cd build && zip -r ../lambda-api.zip .    # Certifique-se de que os arquivos estão na raiz
           cd ..
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
