@@ -15,10 +15,34 @@ jobs:
 
       - name: Instalar dependências e criar pacote ZIP
         run: |
+          # Instalar dependências no diretório build/
           pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
+          
+          # Validar se a instalação foi bem-sucedida
+          if [ ! -d "build" ] || [ -z "$(ls -A build)" ]; then
+            echo "A instalação das dependências falhou ou o diretório build está vazio."
+            exit 1
+          fi
+  
+          # Copiar código para o diretório build/
           cp -r app/* build/
-          cd build && zip -r ../lambda-api.zip .    # Certifique-se de que os arquivos estão na raiz
+          
+          # Garantir que os arquivos foram copiados
+          if [ ! -d "build" ] || [ -z "$(ls -A build)" ]; then
+            echo "A pasta 'app/' está vazia ou não foi copiada corretamente para 'build/'."
+            exit 1
+          fi
+  
+          # Criar o pacote ZIP
+          cd build
+          zip -r ../lambda-api.zip . || { echo "Falha ao criar o arquivo ZIP."; exit 1; }
           cd ..
+          
+          # Confirmar se o ZIP foi criado
+          if [ ! -f "lambda-api.zip" ]; then
+            echo "Arquivo ZIP 'lambda-api.zip' não foi criado na raiz."
+            exit 1
+          fi
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -29,6 +53,7 @@ jobs:
         with:
           name: lambda-api.zip
           path: lambda-api.zip
+
 
   # Job 2: Criar o bucket S3 e enviar o arquivo ZIP
   upload_to_s3:
