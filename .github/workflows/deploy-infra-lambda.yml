@@ -1,0 +1,112 @@
+name: Deploy Infra and Lambda
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Job 1: Configuração do ambiente e construção do pacote
+  setup_and_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Criar estrutura de diretórios
+        run: mkdir -p app
+
+      - name: Criar arquivo .env
+        run: |
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> app/.env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> app/.env
+          echo "AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}" >> app/.env
+
+      - name: Exibir conteúdo do arquivo .env (para depuração)
+        run: cat app/.env
+
+      - name: Instalar dependências e criar pacote ZIP
+        run: |
+          pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
+          cp -r app/* build/
+          cd build && zip -r ../lambda-api.zip .
+          cd ..
+
+      - name: Salvar pacote ZIP como artefato
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-api.zip
+          path: lambda-api.zip
+
+      - name: Salvar arquivo .env como artefato
+        uses: actions/upload-artifact@v3
+        with:
+          name: .env
+          path: app/.env
+
+  # Job 2: Aplicação do Terraform
+  terraform_apply:
+    needs: setup_and_build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Baixar arquivo .env
+        uses: actions/download-artifact@v3
+        with:
+          name: .env
+          path: app/
+
+      - name: Configurar ambiente com .env
+        run: source app/.env
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Inicializar o Terraform
+        run: |
+          terraform init -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
+                         -backend-config="key=terraform/state/hackaton.tfstate" \
+                         -backend-config="region=us-east-1" \
+                         -backend-config="encrypt=true"
+
+      - name: Aplicar configuração Terraform
+        id: apply
+        run: terraform apply -auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
+      - name: Obter nome do bucket
+        id: get_bucket
+        run: |
+          echo "BUCKET_NAME=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
+
+  # Job 3: Upload do arquivo ZIP para o S3
+  upload_lambda_zip:
+    needs: terraform_apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Baixar pacote ZIP
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-api.zip
+          path: .
+
+      - name: Configurar ambiente com .env
+        run: source app/.env
+
+      - name: Upload do arquivo ZIP para o S3
+        run: |
+          aws s3 cp lambda-api.zip s3://$BUCKET_NAME/lambda-api.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}

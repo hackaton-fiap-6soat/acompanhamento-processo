@@ -23,22 +23,22 @@ resource "aws_s3_bucket" "lambda_code_acompanhamento" {
   bucket = "lambda-code-acompanhamento"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
 resource "aws_s3_object" "lambda_api_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
-  source = "../lambda-api.zip"
-  etag   = filemd5("../lambda-api.zip")
+#  source = "../lambda-api.zip"
+  #etag   = filemd5("../lambda-api.zip")
 }
 
 resource "aws_s3_object" "lambda_sqs_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
-  source = "../lambda-api.zip"
-  etag   = filemd5("../lambda-api.zip")
+#  source = "../lambda-api.zip"
+  #etag   = filemd5("../lambda-api.zip")
 }
 
 resource "aws_lambda_function" "api_lambda" {
@@ -51,7 +51,7 @@ resource "aws_lambda_function" "api_lambda" {
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
-  source_code_hash = filebase64sha256("../lambda-api.zip")
+  #source_code_hash = filebase64sha256("../lambda-api.zip")
 }
 
 resource "aws_lambda_function" "sqs_lambda" {
@@ -64,7 +64,7 @@ resource "aws_lambda_function" "sqs_lambda" {
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
-  source_code_hash = filebase64sha256("../lambda-api.zip")
+  #source_code_hash = filebase64sha256("../lambda-api.zip")
 }
 
 # Criar a fila SQS
@@ -204,6 +204,10 @@ output "data_query_lambda_function_name" {
 
 output "sqs_queue_url" {
   value = aws_sqs_queue.queue_acompanhamento.url
+}
+
+output "bucket_name" {
+  value = aws_s3_bucket.lambda_code_acompanhamento.id
 }
 
 output "api_url" {
