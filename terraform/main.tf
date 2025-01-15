@@ -1,46 +1,24 @@
 provider "aws" {
-  region  = "us-east-1"
+  region = "us-east-1"
 }
 
-resource "aws_dynamodb_table" "acompanhamento_processo" {
-  name           = "AcompanhamentoProcesso"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "id_usuario"
-
-  attribute {
-    name = "id_usuario"
-    type = "S"
-  }
-
-  tags = {
-    Environment = "PRD"
-  }
-}
-
-variable "s3_bucket_name" {
-  description = "Nome do bucket para armazenar o código Lambda"
-  type        = string
-}
-
-# Criar o bucket S3
+# Criar o bucket S3 com nome fixo
 resource "aws_s3_bucket" "lambda_code_acompanhamento" {
-  bucket = var.s3_bucket_name
+  bucket = "lambda-code-acompanhamento"
 
   lifecycle {
     prevent_destroy = false
   }
 }
 
+# Criar o objeto no S3 para o código da Lambda
 resource "aws_s3_object" "lambda_api_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
+  source = "lambda-api.zip"  # Corrigido para o arquivo na raiz do código
 }
 
-resource "aws_s3_object" "lambda_sqs_code" {
-  bucket = aws_s3_bucket.lambda_code_acompanhamento.id
-  key    = "lambda-api.zip"
-}
-
+# Função Lambda - AcompanhamentoAPI
 resource "aws_lambda_function" "api_lambda" {
   function_name    = "AcompanhamentoAPI"
   s3_bucket        = aws_s3_bucket.lambda_code_acompanhamento.id
@@ -53,18 +31,17 @@ resource "aws_lambda_function" "api_lambda" {
   architectures    = ["x86_64"]
 }
 
-
+# Função Lambda - AcompanhamentoSQS (Usando o mesmo arquivo zip)
 resource "aws_lambda_function" "sqs_lambda" {
   function_name    = "AcompanhamentoSQS"
   s3_bucket        = aws_s3_bucket.lambda_code_acompanhamento.id
-  s3_key           = aws_s3_object.lambda_sqs_code.key
+  s3_key           = aws_s3_object.lambda_api_code.key  # Usando o mesmo arquivo zip
   handler          = "app.sqs_handler.handler"
   runtime          = "python3.10"
   role             = "arn:aws:iam::765147163480:role/LabRole"
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
-  #source_code_hash = filebase64sha256("../lambda-api.zip")
 }
 
 # Criar a fila SQS
@@ -72,6 +49,7 @@ resource "aws_sqs_queue" "queue_acompanhamento" {
   name = "queue-acompanhamento"
 }
 
+# Permissões para o SQS disparar a Lambda
 resource "aws_lambda_permission" "allow_sqs" {
   statement_id  = "AllowSQSTrigger"
   action        = "lambda:InvokeFunction"
