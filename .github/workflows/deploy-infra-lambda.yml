@@ -12,14 +12,16 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-        with:
-          clean: false  # Evita a limpeza do diretório
 
       - name: Instalar dependências e criar pacotes ZIP
         run: |
           # Criar diretório para Lambda API
           mkdir -p build_api
-          pip install -r requirements-api.txt --platform manylinux2014_x86_64 --target build_api/ --only-binary=:all:
+          if [ ! -f "requirements.txt" ]; then
+            echo "Arquivo requirements.txt não encontrado."
+            exit 1
+          fi
+          pip install -r requirements.txt --platform manylinux2014_x86_64 --target build_api/ --only-binary=:all:
           cp -r app/api/* build_api/
           cd build_api
           zip -r ../lambda-api.zip .
@@ -27,7 +29,11 @@ jobs:
 
           # Criar diretório para Lambda SQS
           mkdir -p build_sqs
-          pip install -r requirements-sqs.txt --platform manylinux2014_x86_64 --target build_sqs/ --only-binary=:all:
+          if [ ! -f "requirements.txt" ]; then
+            echo "Arquivo requirements.txt não encontrado."
+            exit 1
+          fi
+          pip install -r requirements.txt --platform manylinux2014_x86_64 --target build_sqs/ --only-binary=:all:
           cp -r app/sqs/* build_sqs/
           cd build_sqs
           zip -r ../lambda-sqs.zip .
@@ -57,8 +63,6 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-        with:
-          clean: false  # Evita a limpeza do diretório
 
       - name: Baixar pacotes ZIP
         uses: actions/download-artifact@v3
@@ -91,8 +95,6 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-        with:
-          clean: false  # Evita a limpeza do diretório
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
