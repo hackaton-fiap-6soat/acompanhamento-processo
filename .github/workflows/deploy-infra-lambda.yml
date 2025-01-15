@@ -38,6 +38,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      - name: Navegar para o diretório Terraform
+        run: cd terraform
+
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -45,6 +48,7 @@ jobs:
 
       - name: Inicializar o Terraform
         run: |
+          cd terraform
           terraform init -backend-config="bucket=${{ secrets.TERRAFORM_STATE_BUCKET }}" \
                          -backend-config="key=terraform/state/hackaton.tfstate" \
                          -backend-config="region=us-east-1" \
@@ -55,7 +59,9 @@ jobs:
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
       - name: Aplicar configuração Terraform
-        run: terraform apply -auto-approve
+        run: |
+          cd terraform
+          terraform apply -auto-approve
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -63,7 +69,9 @@ jobs:
 
       - name: Obter nome do bucket
         id: get_bucket
-        run: echo "BUCKET_NAME=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
+        run: |
+          cd terraform
+          echo "BUCKET_NAME=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
 
   # Job 3: Upload do arquivo ZIP para o S3
   upload_lambda_zip:
