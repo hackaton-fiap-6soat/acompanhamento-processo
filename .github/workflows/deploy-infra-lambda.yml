@@ -9,6 +9,8 @@ jobs:
   # Job 1: Configuração do ambiente e construção do pacote
   setup_and_build:
     runs-on: ubuntu-latest
+    outputs:
+      env_file_path: "app/.env"
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -41,7 +43,7 @@ jobs:
       - name: Salvar arquivo .env como artefato
         uses: actions/upload-artifact@v3
         with:
-          name: .env
+          name: env-file
           path: app/.env
 
   # Job 2: Aplicação do Terraform
@@ -55,11 +57,17 @@ jobs:
       - name: Baixar arquivo .env
         uses: actions/download-artifact@v3
         with:
-          name: .env
+          name: env-file
           path: app/
 
       - name: Configurar ambiente com .env
-        run: source app/.env
+        run: |
+          if [ -f app/.env ]; then
+            source app/.env
+          else
+            echo "Arquivo .env não encontrado!"
+            exit 1
+          fi
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
@@ -101,7 +109,13 @@ jobs:
           path: .
 
       - name: Configurar ambiente com .env
-        run: source app/.env
+        run: |
+          if [ -f app/.env ]; then
+            source app/.env
+          else
+            echo "Arquivo .env não encontrado!"
+            exit 1
+          fi
 
       - name: Upload do arquivo ZIP para o S3
         run: |
