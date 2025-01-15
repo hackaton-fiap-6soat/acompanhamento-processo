@@ -21,7 +21,7 @@ resource "aws_s3_bucket" "lambda_code_acompanhamento" {
 resource "aws_s3_object" "lambda_api_code" {
   bucket = aws_s3_bucket.lambda_code_acompanhamento.id
   key    = "lambda-api.zip"
-  source = "lambda-api.zip"  # Corrigido para o arquivo na raiz do código
+  source = "lambda-api.zip"
 }
 
 # Função Lambda - AcompanhamentoAPI
