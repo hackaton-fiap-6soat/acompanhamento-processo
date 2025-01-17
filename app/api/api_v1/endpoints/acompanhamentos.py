@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.adapter.adaptersDB import AcompanhamentoDB
 from app.domain.services import AcompanhamentoService
@@ -10,4 +10,8 @@ async def obter_acompanhamento(id: str):
     dynamodb = AcompanhamentoDB("AcompanhamentoProcesso")
     service = AcompanhamentoService(dynamodb)
     acompanhamento = service.buscar_acompanhamento(id)
-    return acompanhamento
+
+    if acompanhamento is None:
+        raise HTTPException(status_code=404, detail="Acompanhamento não encontrado")
+    else:
+        return acompanhamento

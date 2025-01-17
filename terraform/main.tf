@@ -11,11 +11,7 @@ terraform {
   }
 }
 
-variable "s3_bucket_name" {
-  description = "Nome do bucket S3 para armazenar o código Lambda"
-  type        = string
-  default     = "lambda-code-acompanhamento"
-}
+
 
 resource "aws_dynamodb_table" "acompanhamento_processo" {
   name           = "AcompanhamentoProcesso"
@@ -31,6 +27,12 @@ resource "aws_dynamodb_table" "acompanhamento_processo" {
     Environment = "Production"
     Project     = "AcompanhamentoProcesso"
   }
+}
+
+variable "s3_bucket_name" {
+  description = "Nome do bucket S3 para armazenar o código Lambda"
+  type        = string
+  default     = "lambda-code-acompanhamento"
 }
 
 resource "aws_s3_object" "lambda_api_code" {
@@ -78,7 +80,6 @@ resource "aws_lambda_function" "sqs_lambda" {
   architectures    = ["x86_64"]
 }
 
-# Criar a fila SQS
 resource "aws_sqs_queue" "queue_acompanhamento" {
   name = "queue-acompanhamento"
 }

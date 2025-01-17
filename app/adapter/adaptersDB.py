@@ -123,4 +123,4 @@ class AcompanhamentoDB(AcompanhamentoRepository):
             else:
                 None
         except Exception as e:
-            raise ValueError("Erro ao buscar processos do usuário!")
+            raise ValueError(f"Erro ao buscar processos do usuário: {e}")

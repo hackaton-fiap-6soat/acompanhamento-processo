@@ -20,6 +20,17 @@ jobs:
 
       - name: Instalar dependências e criar pacotes ZIP
         run: |
+          # Verifica se o diretório 'app' existe
+          if [ ! -d "app" ]; then
+            echo "Diretório 'app/' não encontrado!"
+            exit 1
+          fi
+
+          # Criar o arquivo .env dentro da pasta 'app'
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" > app/.env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> app/.env
+          echo "AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}" >> app/.env
+          
           mkdir -p build
           pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
           if [ ! -d "app" ]; then
@@ -112,7 +123,7 @@ jobs:
 
       - name: Initialize Terraform
         working-directory: ./terraform
-        run: terraform init -backend-config="bucket=techchallangebucket" -backend-config="key=hackaton.tfstate" -backend-config="region=us-east-1"
+        run: terraform init -input=false -backend-config="bucket=techchallangebucket" -backend-config="key=hackaton.tfstate" -backend-config="region=us-east-1"
 
       - name: Baixar artefatos para o Terraform
         uses: actions/download-artifact@v3
