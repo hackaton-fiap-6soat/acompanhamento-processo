@@ -17,17 +17,20 @@ logger.addHandler(ch)
 
 class AcompanhamentoService:
 
-    def __init__(self, acompanhamentoRepository: AcompanhamentoRepository):
-        caminho_arquivo = "app/data/maquina_estado.json"
-        with open(caminho_arquivo, "r") as arquivo:
-            self.__maquina_estado = json.load(arquivo)
+    def __init__(self, acompanhamentoRepository: AcompanhamentoRepository, maquina_estado=None):
+        if maquina_estado is None:
+            caminho_arquivo = "app/data/maquina_estado.json"
+            with open(caminho_arquivo, "r") as arquivo:
+                self.__maquina_estado = json.load(arquivo)
+        else:
+            self.__maquina_estado = maquina_estado
 
         self.__repository = acompanhamentoRepository
 
     def criar_atualizar_processo(self, data: dict):
         try:
-            data = json.loads(data)
             logger.info(f"Tipo do dado recebido: {type(data)}")
+            data = data if isinstance(data, dict) else json.loads(data)
             logger.info(f"Inicio da inclusão do processo. {data}")
             logger.info(data["processo"] + "_" + data["status"])
             processo = self.__gerar_processo(data["id_usuario"], data["processo"] + "_" + data["status"], data["nome_arquivo"])

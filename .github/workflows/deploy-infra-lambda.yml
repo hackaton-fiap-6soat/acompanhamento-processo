@@ -12,13 +12,70 @@ env:
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
 jobs:
-  setup_and_build:
+  run_tests:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Instalar dependências e criar pacotes ZIP
+      - name: Configurar ambiente e instalar dependências
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Executar testes com cobertura
+        run: |
+          source .venv/bin/activate
+          pytest --cov=app --cov-report=xml
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Salvar cobertura como artefato
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  sonar_analysis:
+    needs: run_tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Baixar cobertura gerada nos testes
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage-report
+
+      - name: Instalar Sonar Scanner
+        run: |
+          curl -sSLo sonar-scanner-cli.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip sonar-scanner-cli.zip -d $HOME
+          echo "$HOME/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
+
+      - name: Rodar Sonar Scanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=hackaton-fiap-6soat_acompanhamento-processo \
+            -Dsonar.organization=hackaton-fiap-6soat \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.branch.name=${GITHUB_REF##*/} \
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+
+  setup_and_build:
+    needs: sonar_analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Criar pacotes ZIP
         run: |
           # Verifica se o diretório 'app' existe
           if [ ! -d "app" ]; then
@@ -33,10 +90,6 @@ jobs:
           
           mkdir -p build
           pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
-          if [ ! -d "app" ]; then
-            echo "Diretório 'app/' não encontrado!"
-            exit 1
-          fi
           cp -r app/ build/
           cd build
           zip -r ../lambda-api.zip .
