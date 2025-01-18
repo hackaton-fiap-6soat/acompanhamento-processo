@@ -50,9 +50,6 @@ jobs:
           name: coverage-report
           path: ./coverage
 
-      - name: Listar artefatos disponíveis
-        run: ls -R ./coverage
-
       - name: Instalar Sonar Scanner
         run: |
           curl -sSLo sonar-scanner-cli.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
@@ -71,20 +68,6 @@ jobs:
             -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.branch.name=${GITHUB_REF##*/} \
             -Dsonar.python.coverage.reportPaths=coverage/coverage.xml
-
-      - name: Rodar Sonar Scanner
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          sonar-scanner \
-            -Dsonar.projectKey=hackaton-fiap-6soat_acompanhamento-processo \
-            -Dsonar.organization=hackaton-fiap-6soat \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=$SONAR_TOKEN \
-            -Dsonar.branch.name=${GITHUB_REF##*/} \
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
   package:
     needs: sonar_analysis
     runs-on: ubuntu-latest
