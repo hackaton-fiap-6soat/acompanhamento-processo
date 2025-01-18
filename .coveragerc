@@ -1,0 +1,17 @@
+[run]
+branch = True
+
+[report]
+exclude_lines =
+    # Exclui classes ou métodos com @staticmethod e @abstractmethod
+    @staticmethod
+    @abstractmethod
+    # Exclui o código que nunca será alcançado
+    raise NotImplementedError
+    if __name__ == .__main__.:
+
+[coverage:report]
+# Exclui linhas ou arquivos específicos
+omit =
+    app//excluded/file.py
+    app/test/*

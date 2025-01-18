@@ -27,7 +27,7 @@ jobs:
       - name: Executar testes com cobertura
         run: |
           source .venv/bin/activate
-          pytest --cov=app --cov-report=xml
+          pytest --cov=app --cov-report=html --cov-fail-under=80 --cov-config=.coveragerc
         env:
           PYTHONPATH: ${{ github.workspace }}
 
