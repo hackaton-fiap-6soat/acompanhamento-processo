@@ -84,9 +84,15 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> app/.env
           echo "AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}" >> app/.env
           
+          # Verifica se o arquivo 'requirements.txt' existe
+          if [ ! -f "requirements.txt" ]; then
+            echo "Arquivo 'requirements.txt' não encontrado!"
+            exit 1
+          fi
+          
           mkdir -p build
-          pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
-          cp -r app/* build/
+          pip install -r requirements.txt --platform manylinux2014_x86_64 --python-version 3.10 --target build/ --only-binary=:all:
+          cp -r app/ build/
           cd build
           zip -r ../lambda-api.zip .
           zip -r ../lambda-sqs.zip .
