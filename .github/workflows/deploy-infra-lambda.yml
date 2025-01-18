@@ -68,7 +68,7 @@ jobs:
             -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.branch.name=${GITHUB_REF##*/} \
             -Dsonar.python.coverage.reportPaths=coverage/coverage.xml
-            -Dsonar.exclusions=**/migrations/**,**/test/**,app/main.py
+            -Dsonar.exclusions=app/test/**,app/main.py
 
   package:
     needs: sonar_analysis
