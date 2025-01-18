@@ -20,6 +20,9 @@ logger = logging.getLogger("DynamoDBAdapter")
 
 load_dotenv(dotenv_path='app/.env')
 
+class CustomDynamoDBException(Exception):
+    pass
+
 class AcompanhamentoDB(AcompanhamentoRepository):
     def __init__(self, table_name: str):
         self.__table_name = table_name
@@ -37,7 +40,7 @@ class AcompanhamentoDB(AcompanhamentoRepository):
         try:
             return self.__dynamodb.Table(self.__table_name)
         except Exception as e:
-            raise DynamoDBException({
+            raise CustomDynamoDBException({
                 "code": "dynamodb.error.table.unavailable",
                 "message": f"Tabela DynamoDB não encontrada: {e}",
             })

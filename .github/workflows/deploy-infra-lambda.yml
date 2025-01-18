@@ -61,13 +61,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           sonar-scanner \
-            -Dsonar.projectKey=hackaton-fiap-6soat_acompanhamento-processo \
-            -Dsonar.organization=hackaton-fiap-6soat \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.branch.name=${GITHUB_REF##*/} \
-            -Dsonar.python.coverage.reportPaths=coverage/coverage.xml            
+
 
   package:
     needs: sonar_analysis
