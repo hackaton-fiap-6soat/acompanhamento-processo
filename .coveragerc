@@ -13,5 +13,4 @@ exclude_lines =
 [coverage:report]
 # Exclui linhas ou arquivos específicos
 omit =
-    app//excluded/file.py
     app/test/*
