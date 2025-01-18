@@ -67,8 +67,7 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.branch.name=${GITHUB_REF##*/} \
-            -Dsonar.python.coverage.reportPaths=coverage/coverage.xml
-            -Dsonar.exclusions=app/test/**,app/main.py
+            -Dsonar.python.coverage.reportPaths=coverage/coverage.xml            
 
   package:
     needs: sonar_analysis
