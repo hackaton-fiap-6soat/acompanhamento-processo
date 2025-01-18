@@ -44,6 +44,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      - name: Rodar testes
+        run: pytest --cov=app --cov-report=xml:coverage/coverage.xml --cov-fail-under=80 --cov-config=.coveragerc
+
       - name: Baixar cobertura gerada nos testes
         uses: actions/download-artifact@v3
         with:
