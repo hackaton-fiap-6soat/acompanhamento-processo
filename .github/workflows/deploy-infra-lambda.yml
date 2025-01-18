@@ -22,7 +22,7 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
+          pip install -r requirements.txt
 
       - name: Executar testes com cobertura
         run: |
@@ -86,7 +86,7 @@ jobs:
           
           mkdir -p build
           pip install -r requirements.txt --platform manylinux2014_x86_64 --target build/ --only-binary=:all:
-          cp -r app/ build/
+          cp -r app/* build/
           cd build
           zip -r ../lambda-api.zip .
           zip -r ../lambda-sqs.zip .
