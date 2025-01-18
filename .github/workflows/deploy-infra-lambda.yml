@@ -68,7 +68,7 @@ jobs:
             -Dsonar.branch.name=${GITHUB_REF##*/} \
             -Dsonar.python.coverage.reportPaths=coverage.xml
 
-  setup_and_build:
+  package:
     needs: sonar_analysis
     runs-on: ubuntu-latest
     steps:
@@ -109,7 +109,7 @@ jobs:
           path: lambda-sqs.zip
 
   upload_to_s3:
-    needs: setup_and_build
+    needs: package
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
