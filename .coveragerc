@@ -8,6 +8,8 @@ exclude_lines =
     @abstractmethod
     # Exclui o código que nunca será alcançado
     raise NotImplementedError
+    raise CustomDynamoDBException
+    except ClientError as e:
     if __name__ == .__main__.:
 
 [coverage:report]

@@ -1,12 +1,61 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from app.adapter.adapters_out import AcompanhamentoDB
+
+from botocore.exceptions import ClientError
+
+from app.adapter.adapters_out import AcompanhamentoDB, CustomDynamoDBException
 from app.domain.models import ProcessosUsuario
 
 @pytest.fixture
 def mock_dynamodb():
-    with patch('app.adapter.adaptersDB.boto3.Session') as mock:
+    with patch('app.adapter.adapters_out.boto3.Session') as mock:
         yield mock
+
+
+def test_criar_usuario_raises_exception(mock_dynamodb):
+    db = AcompanhamentoDB("nome_da_tabela")
+    processos_usuario = ProcessosUsuario(id_usuario="user123", processos={})
+
+    # Simulando a exceção ao chamar put_item
+    db._AcompanhamentoDB__table.put_item.side_effect = Exception("Erro ao criar usuário")
+
+    with pytest.raises(Exception) as context:
+        db.criar_usuario(processos_usuario)
+
+    assert "Erro ao criar usuário" in str(context.value)
+
+def test_atualizar_processo_raises_client_error(mock_dynamodb):
+    db = AcompanhamentoDB("nome_da_tabela")
+
+    # Simulando a exceção ClientError
+    client_error = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "UpdateItem")
+    db._AcompanhamentoDB__table.update_item.side_effect = client_error
+
+    result = db.atualizar_processo("user123", "processo1", "novo_status", 2)
+
+    assert result is None  # Verifica que o retorno é None para ConditionalCheckFailedException
+
+def test_atualizar_processo_raises_exception(mock_dynamodb):
+    db = AcompanhamentoDB("nome_da_tabela")
+
+    # Simulando a exceção ao chamar update_item
+    db._AcompanhamentoDB__table.update_item.side_effect = Exception("Erro inesperado")
+
+    with pytest.raises(Exception) as context:
+        db.atualizar_processo("user123", "processo1", "novo_status", 2)
+
+    assert "Erro inesperado" in str(context.value)
+
+def test_buscar_processos_raises_exception(mock_dynamodb):
+    db = AcompanhamentoDB("nome_da_tabela")
+
+    # Simulando a exceção ao chamar get_item
+    db._AcompanhamentoDB__table.get_item.side_effect = Exception("Erro ao buscar processos")
+
+    with pytest.raises(ValueError) as context:
+        db.buscar_processos("user123")
+
+    assert "Erro ao buscar processos" in str(context.value)
 
 def test_criar_usuario(mock_dynamodb):
     # Arrange

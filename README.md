@@ -2,6 +2,14 @@
 
 Este é um microserviço para acompanhamento do status do processamento dos arquivos enviados pelo usuário através de diferentes status: **Recebido**, **Verificado**, **Gerado** e **Notificado**.
 
+## Arquitetura Utilizada: Portas e Adapters
+
+- **adpater**: Adaptadores para comunicação com o mundo externo
+- **api**: Controles
+- **domain**: Utiliza um proxy reverso para gerenciar as requisições
+- **port**: Terraform para provisionamento na AWS
+
+
 ## Tecnologias Utilizadas
 
 - **Banco de Dados**: AWS dynamoDB

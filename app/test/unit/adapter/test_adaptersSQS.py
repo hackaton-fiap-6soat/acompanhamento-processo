@@ -48,7 +48,7 @@ def mock_dynamodb():
     mock_session.resource.return_value = mock_dynamodb_resource
     mock_dynamodb_resource.Table.return_value = mock_table
 
-    with patch('app.adapter.adaptersDB.boto3.Session', return_value=mock_session):
+    with patch('app.adapter.adapters_out.boto3.Session', return_value=mock_session):
         yield mock_dynamodb_resource
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def test_handler_success(mock_acompanhamento_service):
     }
 
     # Act
-    with patch('app.sqs_handler.AcompanhamentoService', return_value=mock_acompanhamento_service):
+    with patch('app.adapter.adapters_in.AcompanhamentoService', return_value=mock_acompanhamento_service):
         response = handler(event, None)
 
     # Assert
@@ -81,7 +81,7 @@ def test_handler_no_records(mock_acompanhamento_service):
     }
     
     # Act
-    with patch('app.sqs_handler.AcompanhamentoService', return_value=mock_acompanhamento_service):
+    with patch('app.adapter.adapters_in.AcompanhamentoService', return_value=mock_acompanhamento_service):
         response = handler(event, None)
 
     # Assert
