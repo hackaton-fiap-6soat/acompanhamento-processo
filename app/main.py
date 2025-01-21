@@ -13,5 +13,5 @@ app = FastAPI()
 async def root():
     return {"message": "API is running"}
 
-app.include_router(api_router, prefix="/api/v1/")
+app.include_router(api_router, prefix="/api/v1")
 handler = Mangum(app)

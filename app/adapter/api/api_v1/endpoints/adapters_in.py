@@ -5,7 +5,7 @@ from app.domain.services import AcompanhamentoService
 
 router = APIRouter()
 
-@router.get("acompanhamentos/{id}")
+@router.get("/acompanhamentos/{id}")
 async def obter_acompanhamento(id: str):
     dynamodb = AcompanhamentoDB("AcompanhamentoProcesso")
     service = AcompanhamentoService(dynamodb)
