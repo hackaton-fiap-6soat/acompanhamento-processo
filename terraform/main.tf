@@ -72,7 +72,7 @@ resource "aws_lambda_function" "sqs_lambda" {
   function_name    = "AcompanhamentoSQS"
   s3_bucket        = aws_s3_object.lambda_sqs_code.bucket
   s3_key           = aws_s3_object.lambda_sqs_code.key
-  handler          = "app.adapters_in.handler"
+  handler          = "app.adapter.adapters_in.handler"
   runtime          = "python3.10"
   role             = "arn:aws:iam::765147163480:role/LabRole"
   memory_size      = 128
