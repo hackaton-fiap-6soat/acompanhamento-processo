@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from app.adapter.adaptersDB import AcompanhamentoDB
+from app.adapter.adapters_out import AcompanhamentoDB
 from app.domain.models import ProcessosUsuario
 
 @pytest.fixture

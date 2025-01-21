@@ -16,9 +16,9 @@ app/__pycache__/sqs_handler.cpython-310.pyc
 app/adapter/__pycache__/__init__.cpython-310.pyc
 app/adapter/__pycache__/adaptersDB.cpython-310.pyc
 app/adapter/__pycache__/exceptions.cpython-310.pyc
-app/api/__pycache__/__init__.cpython-310.pyc
-app/api/api_v1/__pycache__/__init__.cpython-310.pyc
-app/api/api_v1/endpoints/__pycache__/__init__.cpython-310.pyc
+app/adapter/api/__pycache__/__init__.cpython-310.pyc
+app/adapter/api/api_v1/__pycache__/__init__.cpython-310.pyc
+app/adapter/api/api_v1/endpoints/__pycache__/__init__.cpython-310.pyc
 app/domain/__pycache__/__init__.cpython-310.pyc
 app/domain/__pycache__/models.cpython-310.pyc
 app/domain/__pycache__/services.cpython-310.pyc

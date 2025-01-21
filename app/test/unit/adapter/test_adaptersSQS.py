@@ -2,8 +2,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 
-from app.domain.services import AcompanhamentoService
-from app.sqs_handler import handler
+from app.adapter.adapters_in import handler
 
 
 def carregar_arquivo():

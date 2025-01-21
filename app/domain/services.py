@@ -8,11 +8,9 @@ from app.port.repositories import AcompanhamentoRepository
 logger = logging.getLogger(name="sqs_handler")
 logger.setLevel(logging.INFO)
 
-# Cria o manipulador de logs para o CloudWatch
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 
-# Adiciona o manipulador ao logger
 logger.addHandler(ch)
 
 class AcompanhamentoService:

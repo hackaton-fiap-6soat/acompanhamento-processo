@@ -2,7 +2,7 @@ import logging
 from fastapi import FastAPI
 from mangum import Mangum
 
-from app.api.api_v1.api import router as api_router
+from app.adapter.api.api_v1.endpoints.adapters_in import router as api_router
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(name="AcompanhamentoProcesso")
