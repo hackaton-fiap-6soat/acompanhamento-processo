@@ -17,12 +17,6 @@ data "aws_vpc" "hackaton-vpc" {
     values = ["hackathon-vpc"]
   }
 }
-data aws_apigatewayv2_apis apis {
-  name = "api_gw_api"
-}
-data aws_apigatewayv2_api api {
-  api_id = one(data.aws_apigatewayv2_apis.apis.ids)
-}
 
 # Captura todas as subnets privadas dentro da VPC
 data "aws_subnets" "private_subnets" {
@@ -38,17 +32,27 @@ data "aws_subnet" "private_subnet" {
   id       = each.value
 }
 
+# Captura o API Gateway existente
+data "aws_apigatewayv2_apis" "apis" {
+  name = "api_gw_api"
+}
+
+data "aws_apigatewayv2_api" "api" {
+  api_id = one(data.aws_apigatewayv2_apis.apis.ids)
+}
+
 resource "aws_security_group" "lambda" {
   name = "lambda-sg"
   description = "Security group for Lambda"
   vpc_id      = data.aws_vpc.hackaton-vpc.id
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+// Criar um VPC Endpoint para o DynamoDB
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id       = data.aws_vpc.hackaton-vpc.id
+  service_name = "com.amazonaws.us-east-1.dynamodb"
+
+  route_table_ids = data.aws_subnets.private_subnets.ids
 }
 
 resource "aws_dynamodb_table" "acompanhamento_processo" {
@@ -155,16 +159,10 @@ resource "aws_lambda_event_source_mapping" "sqs_trigger" {
   }
 }
 
-#Criar o API Gateway
-# resource "aws_api_gateway_rest_api" "acompanhamento_api" {
-#   name        = "GatewayAcompanhamento"
-#   description = "API Gateway para a Lambda AcompanhamentoAPI"
-# }
-
 resource "aws_api_gateway_resource" "acompanhamentos_resource" {
   rest_api_id = data.aws_apigatewayv2_api.api.id
   parent_id   = data.aws_apigatewayv2_api.api.api_id
-  path_part   = "api"
+  path_part   = "acompanhamentos"
 }
 
 resource "aws_api_gateway_resource" "v1_resource" {
@@ -173,15 +171,9 @@ resource "aws_api_gateway_resource" "v1_resource" {
   path_part   = "v1"
 }
 
-resource "aws_api_gateway_resource" "acompanhamentos_path" {
-  rest_api_id = data.aws_apigatewayv2_api.api.id
-  parent_id   = aws_api_gateway_resource.v1_resource.id
-  path_part   = "acompanhamentos"
-}
-
 resource "aws_api_gateway_resource" "id_path" {
   rest_api_id = data.aws_apigatewayv2_api.api.id
-  parent_id   = aws_api_gateway_resource.acompanhamentos_path.id
+  parent_id   = aws_api_gateway_resource.acompanhamentos_resource.id
   path_part   = "{id}"
 }
 
