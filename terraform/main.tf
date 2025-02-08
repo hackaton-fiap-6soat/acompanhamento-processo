@@ -18,8 +18,16 @@ data "aws_vpc" "hackaton-vpc" {
   }
 }
 
-# Captura todas as subnets privadas dentro da VPC
+# Captura todas as subnets privadas dentro da VPC correta
 data "aws_subnets" "private_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.hackaton-vpc.id]
+  }
+}
+
+# Captura as tabelas de roteamento associadas às subnets
+data "aws_route_tables" "private_route_tables" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.hackaton-vpc.id]
@@ -47,12 +55,12 @@ resource "aws_security_group" "lambda" {
   vpc_id      = data.aws_vpc.hackaton-vpc.id
 }
 
-// Criar um VPC Endpoint para o DynamoDB
+# Criar um VPC Endpoint para o DynamoDB
 resource "aws_vpc_endpoint" "dynamodb" {
   vpc_id       = data.aws_vpc.hackaton-vpc.id
   service_name = "com.amazonaws.us-east-1.dynamodb"
 
-  route_table_ids = data.aws_subnets.private_subnets.ids
+  route_table_ids = data.aws_route_tables.private_route_tables.ids
 }
 
 resource "aws_dynamodb_table" "acompanhamento_processo" {
