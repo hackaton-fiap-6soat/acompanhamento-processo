@@ -41,6 +41,7 @@ data "aws_subnet" "private_subnet" {
 resource "aws_security_group" "lambda" {
   name = "lambda-sg"
   description = "Security group for Lambda"
+  vpc_id      = data.aws_vpc.hackaton-vpc.id
 
   egress {
     from_port   = 0
@@ -267,4 +268,8 @@ output "sqs_queue_url" {
 
 output "api_url" {
   value = "https://${data.aws_apigatewayv2_api.api.id}.execute-api.us-east-1.amazonaws.com/prod/api/v1/acompanhamentos/{id}"
+}
+
+output "subnet_ids" {
+  value = values(data.aws_subnet.private_subnet)[*].id
 }
