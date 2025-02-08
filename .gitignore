@@ -2131,3 +2131,4 @@ app/domain/__pycache__/models.cpython-310.pyc
 app/domain/__pycache__/services.cpython-310.pyc
 app/port/__pycache__/__init__.cpython-310.pyc
 app/port/__pycache__/repositories.cpython-310.pyc
+/.env

@@ -11,6 +11,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.ACTIONS_RUNTIME_TOKEN }}
 
 jobs:
   run_tests:
@@ -43,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Baixar cobertura gerada nos testes
         uses: actions/download-artifact@v4
@@ -116,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Baixar pacotes ZIP
         uses: actions/download-artifact@v4

@@ -167,41 +167,18 @@ resource "aws_lambda_event_source_mapping" "sqs_trigger" {
   }
 }
 
-resource "aws_api_gateway_resource" "acompanhamentos_resource" {
-  rest_api_id = data.aws_apigatewayv2_api.api.id
-  parent_id   = data.aws_apigatewayv2_api.api.api_id
-  path_part   = "acompanhamentos"
+# Criar uma rota para o recurso "acompanhamentos"
+resource "aws_apigatewayv2_route" "acompanhamentos_route" {
+  api_id    = data.aws_apigatewayv2_api.api.id
+  route_key = "GET /acompanhamentos"
+  target    = "integrations/${aws_apigatewayv2_integration.acompanhamentos_integration.id}"
 }
 
-resource "aws_api_gateway_resource" "v1_resource" {
-  rest_api_id = data.aws_apigatewayv2_api.api.id
-  parent_id   = aws_api_gateway_resource.acompanhamentos_resource.id
-  path_part   = "v1"
-}
-
-resource "aws_api_gateway_resource" "id_path" {
-  rest_api_id = data.aws_apigatewayv2_api.api.id
-  parent_id   = aws_api_gateway_resource.acompanhamentos_resource.id
-  path_part   = "{id}"
-}
-
-# Configurar o método GET
-resource "aws_api_gateway_method" "get_acompanhamentos" {
-  rest_api_id   = data.aws_apigatewayv2_api.api.id
-  resource_id   = aws_api_gateway_resource.id_path.id
-  http_method   = "GET"
-  authorization = "NONE"
-
-  api_key_required = true
-}
-
-resource "aws_api_gateway_integration" "lambda_integration" {
-  rest_api_id             = data.aws_apigatewayv2_api.api.id
-  resource_id             = aws_api_gateway_resource.id_path.id
-  http_method             = aws_api_gateway_method.get_acompanhamentos.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.api_lambda.invoke_arn
+# Criar uma integração para o recurso
+resource "aws_apigatewayv2_integration" "acompanhamentos_integration" {
+  api_id          = data.aws_apigatewayv2_api.api.id
+  integration_type = "AWS_PROXY"
+  integration_uri  = aws_lambda_function.api_lambda.invoke_arn
 }
 
 resource "aws_lambda_permission" "api_gateway_permission" {
@@ -212,45 +189,20 @@ resource "aws_lambda_permission" "api_gateway_permission" {
   source_arn    = "${data.aws_apigatewayv2_api.api.execution_arn}/*/*"
 }
 
-resource "aws_api_gateway_deployment" "api_deployment" {
-  depends_on = [aws_api_gateway_integration.lambda_integration]
-  rest_api_id = data.aws_apigatewayv2_api.api.id
+# Criar um deployment para o API Gateway
+resource "aws_apigatewayv2_deployment" "acompanhamento_deployment" {
+  api_id = data.aws_apigatewayv2_api.api.id
+
+  depends_on = [
+    aws_apigatewayv2_route.acompanhamentos_route
+  ]
 }
 
-resource "aws_api_gateway_stage" "prod_stage" {
-  deployment_id = aws_api_gateway_deployment.api_deployment.id
-  rest_api_id   = data.aws_apigatewayv2_api.api.id
-  stage_name    = "prod"
-}
-
-resource "aws_api_gateway_usage_plan" "usage_plan" {
-  name = "AcompanhamentoAPIUsagePlan"
-
-  api_stages {
-    api_id = data.aws_apigatewayv2_api.api.id
-    stage  = aws_api_gateway_stage.prod_stage.stage_name
-  }
-
-  throttle_settings {
-    rate_limit  = 1000
-    burst_limit = 1000
-  }
-
-  quota_settings {
-    limit  = 1000
-    period = "MONTH"
-  }
-}
-
-resource "aws_api_gateway_api_key" "api_key" {
-  name    = "AcompanhamentoAPIKey"
-  enabled = true
-}
-
-resource "aws_api_gateway_usage_plan_key" "usage_plan_key" {
-  key_id        = aws_api_gateway_api_key.api_key.id
-  key_type      = "API_KEY"
-  usage_plan_id = aws_api_gateway_usage_plan.usage_plan.id
+# Criar um stage para o API Gateway
+resource "aws_apigatewayv2_stage" "acompanhamento_stage" {
+  api_id      = data.aws_apigatewayv2_api.api.id
+  deployment_id = aws_apigatewayv2_deployment.acompanhamento_deployment.id
+  name        = "prod"
 }
 
 # Outputs
