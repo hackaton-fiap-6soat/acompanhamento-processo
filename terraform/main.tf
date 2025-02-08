@@ -11,7 +11,52 @@ terraform {
   }
 }
 
+data "aws_vpc" "hackaton-vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["hackaton-vpc"]
+  }
+}
 
+data "aws_subnet" "hackaton-subnet" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.hackaton-vpc.id]
+  }
+}
+
+data aws_apigatewayv2_apis apis {
+  name = "api_gw_api"
+}
+data aws_apigatewayv2_api api {
+  api_id = one(data.aws_apigatewayv2_apis.apis.ids)
+}
+
+# Captura todas as subnets privadas dentro da VPC
+data "aws_subnets" "private_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.hackaton-vpc.id]
+  }
+}
+
+# Captura as subnets individualmente
+data "aws_subnet" "private_subnet" {
+  for_each = toset(data.aws_subnets.private_subnets.ids)
+  id       = each.value
+}
+
+resource "aws_security_group" "lambda" {
+  name = "lambda-sg"
+  description = "Security group for Lambda"
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
 resource "aws_dynamodb_table" "acompanhamento_processo" {
   name           = "AcompanhamentoProcesso"
@@ -66,6 +111,11 @@ resource "aws_lambda_function" "api_lambda" {
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
+
+  vpc_config {
+    subnet_ids         = values(data.aws_subnet.private_subnet)[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
 }
 
 resource "aws_lambda_function" "sqs_lambda" {
@@ -78,6 +128,11 @@ resource "aws_lambda_function" "sqs_lambda" {
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
+
+  vpc_config {
+    subnet_ids         = values(data.aws_subnet.private_subnet)[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
 }
 
 resource "aws_sqs_queue" "queue_acompanhamento" {
@@ -108,38 +163,38 @@ resource "aws_lambda_event_source_mapping" "sqs_trigger" {
 }
 
 #Criar o API Gateway
-resource "aws_api_gateway_rest_api" "acompanhamento_api" {
-  name        = "GatewayAcompanhamento"
-  description = "API Gateway para a Lambda AcompanhamentoAPI"
-}
+# resource "aws_api_gateway_rest_api" "acompanhamento_api" {
+#   name        = "GatewayAcompanhamento"
+#   description = "API Gateway para a Lambda AcompanhamentoAPI"
+# }
 
 resource "aws_api_gateway_resource" "acompanhamentos_resource" {
-  rest_api_id = aws_api_gateway_rest_api.acompanhamento_api.id
-  parent_id   = aws_api_gateway_rest_api.acompanhamento_api.root_resource_id
+  rest_api_id = data.aws_apigatewayv2_api.api.id
+  parent_id   = data.aws_apigatewayv2_api.api.api_id
   path_part   = "api"
 }
 
 resource "aws_api_gateway_resource" "v1_resource" {
-  rest_api_id = aws_api_gateway_rest_api.acompanhamento_api.id
+  rest_api_id = data.aws_apigatewayv2_api.api.id
   parent_id   = aws_api_gateway_resource.acompanhamentos_resource.id
   path_part   = "v1"
 }
 
 resource "aws_api_gateway_resource" "acompanhamentos_path" {
-  rest_api_id = aws_api_gateway_rest_api.acompanhamento_api.id
+  rest_api_id = data.aws_apigatewayv2_api.api.id
   parent_id   = aws_api_gateway_resource.v1_resource.id
   path_part   = "acompanhamentos"
 }
 
 resource "aws_api_gateway_resource" "id_path" {
-  rest_api_id = aws_api_gateway_rest_api.acompanhamento_api.id
+  rest_api_id = data.aws_apigatewayv2_api.api.id
   parent_id   = aws_api_gateway_resource.acompanhamentos_path.id
   path_part   = "{id}"
 }
 
 # Configurar o método GET
 resource "aws_api_gateway_method" "get_acompanhamentos" {
-  rest_api_id   = aws_api_gateway_rest_api.acompanhamento_api.id
+  rest_api_id   = data.aws_apigatewayv2_api.api.id
   resource_id   = aws_api_gateway_resource.id_path.id
   http_method   = "GET"
   authorization = "NONE"
@@ -148,7 +203,7 @@ resource "aws_api_gateway_method" "get_acompanhamentos" {
 }
 
 resource "aws_api_gateway_integration" "lambda_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.acompanhamento_api.id
+  rest_api_id             = data.aws_apigatewayv2_api.api.id
   resource_id             = aws_api_gateway_resource.id_path.id
   http_method             = aws_api_gateway_method.get_acompanhamentos.http_method
   integration_http_method = "POST"
@@ -161,17 +216,17 @@ resource "aws_lambda_permission" "api_gateway_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api_lambda.arn
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.acompanhamento_api.execution_arn}/*/*"
+  source_arn    = "${data.aws_apigatewayv2_api.api.execution_arn}/*/*"
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on = [aws_api_gateway_integration.lambda_integration]
-  rest_api_id = aws_api_gateway_rest_api.acompanhamento_api.id
+  rest_api_id = data.aws_apigatewayv2_api.api.id
 }
 
 resource "aws_api_gateway_stage" "prod_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.acompanhamento_api.id
+  rest_api_id   = data.aws_apigatewayv2_api.api.id
   stage_name    = "prod"
 }
 
@@ -179,7 +234,7 @@ resource "aws_api_gateway_usage_plan" "usage_plan" {
   name = "AcompanhamentoAPIUsagePlan"
 
   api_stages {
-    api_id = aws_api_gateway_rest_api.acompanhamento_api.id
+    api_id = data.aws_apigatewayv2_api.api.id
     stage  = aws_api_gateway_stage.prod_stage.stage_name
   }
 
@@ -219,5 +274,5 @@ output "sqs_queue_url" {
 }
 
 output "api_url" {
-  value = "https://${aws_api_gateway_rest_api.acompanhamento_api.id}.execute-api.us-east-1.amazonaws.com/prod/api/v1/acompanhamentos/{id}"
+  value = "https://${data.aws_apigatewayv2_api.api.id}.execute-api.us-east-1.amazonaws.com/prod/api/v1/acompanhamentos/{id}"
 }
