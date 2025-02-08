@@ -99,7 +99,7 @@ resource "aws_lambda_function" "api_lambda" {
   s3_key           = aws_s3_object.lambda_api_code.key
   handler          = "app.main.handler"
   runtime          = "python3.10"
-  role             = "arn:aws:iam::765147163480:role/LabRole"
+  role             = "arn:aws:iam::529515678525:role/LabRole"
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
@@ -116,7 +116,7 @@ resource "aws_lambda_function" "sqs_lambda" {
   s3_key           = aws_s3_object.lambda_sqs_code.key
   handler          = "app.adapter.adapters_in.handler"
   runtime          = "python3.10"
-  role             = "arn:aws:iam::765147163480:role/LabRole"
+  role             = "arn:aws:iam::529515678525:role/LabRole"
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
