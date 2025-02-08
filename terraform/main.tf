@@ -11,8 +11,6 @@ terraform {
   }
 }
 
-data "aws_vpcs" "all_vpcs" {}
-
 data "aws_vpc" "hackaton-vpc" {
   filter {
     name   = "tag:Name"
