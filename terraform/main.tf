@@ -14,17 +14,9 @@ terraform {
 data "aws_vpc" "hackaton-vpc" {
   filter {
     name   = "tag:Name"
-    values = ["hackaton-vpc"]
+    values = ["hackathon-vpc"]
   }
 }
-
-data "aws_subnet" "hackaton-subnet" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.hackaton-vpc.id]
-  }
-}
-
 data aws_apigatewayv2_apis apis {
   name = "api_gw_api"
 }
