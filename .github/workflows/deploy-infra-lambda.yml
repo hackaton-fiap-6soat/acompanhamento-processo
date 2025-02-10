@@ -179,7 +179,7 @@ jobs:
 
       - name: Initialize Terraform
         working-directory: ./terraform
-        run: terraform init -backend-config="bucket=techchallangebucket" -backend-config="key=hackaton.tfstate" -backend-config="region=us-east-1"
+        run: terraform init -backend-config="bucket=$BUCKET_NAME" -backend-config="key=hackaton.tfstate" -backend-config="region=us-east-1"
 
       - name: Baixar artefatos para o Terraform
         uses: actions/download-artifact@v4
