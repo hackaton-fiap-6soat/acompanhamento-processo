@@ -11,7 +11,66 @@ terraform {
   }
 }
 
+data "aws_vpc" "hackaton-vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["hackathon-vpc"]
+  }
+}
 
+# Captura todas as subnets privadas dentro da VPC correta
+data "aws_subnets" "private_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.hackaton-vpc.id]
+  }
+}
+
+# Captura as tabelas de roteamento associadas às subnets
+data "aws_route_tables" "private_route_tables" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.hackaton-vpc.id]
+  }
+}
+
+# Captura as subnets individualmente
+data "aws_subnet" "private_subnet" {
+  for_each = toset(data.aws_subnets.private_subnets.ids)
+  id       = each.value
+}
+
+resource "aws_security_group" "lambda" {
+  name        = "lambda-sg"
+  description = "Security group for Lambda"
+  vpc_id      = data.aws_vpc.hackaton-vpc.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  # Permitir todo o tráfego de entrada (ajuste conforme necessário)
+    cidr_blocks = ["0.0.0.0/0"]  # Ajuste para permitir apenas o tráfego necessário
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  # Permitir todo o tráfego de saída
+    cidr_blocks = ["0.0.0.0/0"]  # Ajuste para permitir apenas o tráfego necessário
+  }
+}
+
+# Captura o API Gateway existente
+data "aws_apigatewayv2_apis" "apis" {
+  name = "api_gw_api"
+}
+
+# Criar um VPC Endpoint para o DynamoDB
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id       = data.aws_vpc.hackaton-vpc.id
+  service_name = "com.amazonaws.us-east-1.dynamodb"
+  route_table_ids = data.aws_route_tables.private_route_tables.ids
+}
 
 resource "aws_dynamodb_table" "acompanhamento_processo" {
   name           = "AcompanhamentoProcesso"
@@ -62,10 +121,15 @@ resource "aws_lambda_function" "api_lambda" {
   s3_key           = aws_s3_object.lambda_api_code.key
   handler          = "app.main.handler"
   runtime          = "python3.10"
-  role             = "arn:aws:iam::765147163480:role/LabRole"
+  role             = "arn:aws:iam::529515678525:role/LabRole"
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
+
+  vpc_config {
+    subnet_ids         = values(data.aws_subnet.private_subnet)[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
 }
 
 resource "aws_lambda_function" "sqs_lambda" {
@@ -74,10 +138,15 @@ resource "aws_lambda_function" "sqs_lambda" {
   s3_key           = aws_s3_object.lambda_sqs_code.key
   handler          = "app.adapter.adapters_in.handler"
   runtime          = "python3.10"
-  role             = "arn:aws:iam::765147163480:role/LabRole"
+  role             = "arn:aws:iam::529515678525:role/LabRole"
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
+
+  vpc_config {
+    subnet_ids         = values(data.aws_subnet.private_subnet)[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
 }
 
 resource "aws_sqs_queue" "queue_acompanhamento" {
