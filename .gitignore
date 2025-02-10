@@ -31,3 +31,8 @@ app/test/unit/domain/__pycache__/test_models.cpython-310-pytest-8.3.4.pyc
 app/test/unit/domain/__pycache__/test_models.cpython-310.pyc
 app/test/unit/domain/__pycache__/test_services.cpython-310-pytest-8.3.4.pyc
 app/test/unit/domain/__pycache__/test_services.cpython-310.pyc
+
+
+.terraform
+.terraform.lock.hcl
+tfplan

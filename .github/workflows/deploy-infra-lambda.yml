@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  BUCKET_NAME: "lambda-code-acompanhamento"
+  BUCKET_NAME: "lambda-code-acompanhamento-2"
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
@@ -179,7 +179,7 @@ jobs:
 
       - name: Initialize Terraform
         working-directory: ./terraform
-        run: terraform init -backend-config="bucket=techchallangebucket" -backend-config="key=hackaton.tfstate" -backend-config="region=us-east-1"
+        run: terraform init -backend-config="bucket=${BUCKET_NAME}" -backend-config="key=hackaton.tfstate" -backend-config="region=us-east-1"
 
       - name: Baixar artefatos para o Terraform
         uses: actions/download-artifact@v3

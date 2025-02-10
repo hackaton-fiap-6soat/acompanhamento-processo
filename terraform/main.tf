@@ -12,6 +12,40 @@ terraform {
 }
 
 
+data "aws_vpc" "hackathon-vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["fiap-hackathon-vpc"]
+  }
+}
+
+data "aws_subnets" "private_subnets" {
+  filter {
+    name = "vpc-id"
+    values = [data.aws_vpc.hackathon-vpc.id]
+  }
+
+  filter {
+    name = "tag:Name"
+    values = ["*private*"]
+  }
+}
+
+resource "aws_security_group" "lambda" {
+  name        = "lambda_sg"
+  description = "Security group for Lambda"
+  vpc_id      = data.aws_vpc.hackathon-vpc.id
+
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "TCP"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
+
 
 resource "aws_dynamodb_table" "acompanhamento_processo" {
   name           = "AcompanhamentoProcesso"
@@ -78,6 +112,11 @@ resource "aws_lambda_function" "sqs_lambda" {
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
+
+  vpc_config {
+    subnet_ids = data.aws_subnets.private_subnets.ids
+    security_group_ids = [aws_security_group.lambda.id]
+  }
 }
 
 resource "aws_sqs_queue" "queue_acompanhamento" {
@@ -105,6 +144,8 @@ resource "aws_lambda_event_source_mapping" "sqs_trigger" {
   lifecycle {
     ignore_changes = [event_source_arn]
   }
+  
+  
 }
 
 #Criar o API Gateway
