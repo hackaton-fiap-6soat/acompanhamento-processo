@@ -14,7 +14,7 @@ terraform {
 data "aws_vpc" "hackaton-vpc" {
   filter {
     name   = "tag:Name"
-    values = ["hackathon-vpc"]
+    values = ["fiap-hackathon-vpc"]
   }
 }
 
