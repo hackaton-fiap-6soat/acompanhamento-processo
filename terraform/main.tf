@@ -18,6 +18,11 @@ data "aws_vpc" "hackaton-vpc" {
   }
 }
 
+
+data "aws_iam_role" "lab_role" {
+  name = "LabRole"
+}
+
 # Captura todas as subnets privadas dentro da VPC correta
 data "aws_subnets" "private_subnets" {
   filter {
@@ -121,7 +126,7 @@ resource "aws_lambda_function" "api_lambda" {
   s3_key           = aws_s3_object.lambda_api_code.key
   handler          = "app.main.handler"
   runtime          = "python3.10"
-  role             = "arn:aws:iam::529515678525:role/LabRole"
+  role             = data.aws_iam_role.lab_role.arn
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
@@ -138,7 +143,7 @@ resource "aws_lambda_function" "sqs_lambda" {
   s3_key           = aws_s3_object.lambda_sqs_code.key
   handler          = "app.adapter.adapters_in.handler"
   runtime          = "python3.10"
-  role             = "arn:aws:iam::529515678525:role/LabRole"
+  role             = data.aws_iam_role.lab_role.arn
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
