@@ -102,16 +102,24 @@ resource "aws_lambda_function" "api_lambda" {
   architectures    = ["x86_64"]
 }
 
+# Package the Lambda function
+data "archive_file" "process_s3_files" {
+  type        = "zip"
+  source_dir  = "${path.module}/../app"
+  output_path = "${path.module}/../acompanhamento.zip"
+}
+
+
 resource "aws_lambda_function" "sqs_lambda" {
   function_name    = "AcompanhamentoSQS"
-  s3_bucket        = aws_s3_object.lambda_sqs_code.bucket
-  s3_key           = aws_s3_object.lambda_sqs_code.key
   handler          = "app.adapter.adapters_in.handler"
   runtime          = "python3.10"
   role             = "arn:aws:iam::765147163480:role/LabRole"
   memory_size      = 128
   timeout          = 30
   architectures    = ["x86_64"]
+  filename         = "${path.module}/../acompanhamento.zip"
+  source_code_hash = data.archive_file.process_s3_files.output_base64sha256
 
   vpc_config {
     subnet_ids = data.aws_subnets.private_subnets.ids
