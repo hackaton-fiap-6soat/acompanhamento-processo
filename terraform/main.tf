@@ -91,7 +91,7 @@ resource "aws_dynamodb_table" "acompanhamento_processo" {
 variable "s3_bucket_name" {
   description = "Nome do bucket S3 para armazenar o código Lambda"
   type        = string
-  default     = "lambda-code-acompanhamento-2"
+  default     = "lambda-code-acompanhamento-fiap"
 }
 
 resource "aws_s3_object" "lambda_api_code" {
